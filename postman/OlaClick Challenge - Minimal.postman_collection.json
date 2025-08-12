@@ -1,0 +1,227 @@
+{
+	"info": {
+		"_postman_id": "22bbce8a-667d-407f-a5ff-24a7d1732df5",
+		"name": "OlaClick Challenge - Minimal",
+		"description": "Colección mínima: crear, listar, ver y avanzar. Valida 'total' y estados initiated → sent → delivered.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "32011081",
+		"_collection_link": "https://codecima.postman.co/workspace/sorteos-proyectoecuador~13bf59b6-5bc2-479b-b955-7dc6c15261b6/collection/32011081-22bbce8a-667d-407f-a5ff-24a7d1732df5?action=share&source=collection_link&creator=32011081"
+	},
+	"item": [
+		{
+			"name": "Crear Pedido",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('201/200', () => pm.expect(pm.response.code).to.be.oneOf([200,201]));",
+							"const d = pm.response.json();",
+							"pm.collectionVariables.set('order_id', d.id);",
+							"pm.test('status = initiated', () => pm.expect(d.status).to.eql('initiated'));",
+							"pm.test('total = 80', () => pm.expect(d.total).to.eql(80));"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"client_name\": \"Carlos Gómez\",\n  \"items\": [\n    {\n      \"description\": \"Lomo saltado\",\n      \"quantity\": 1,\n      \"unit_price\": 60\n    },\n    {\n      \"description\": \"Inka Kola\",\n      \"quantity\": 2,\n      \"unit_price\": 10\n    }\n  ]\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/orders",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"orders"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Ver Pedido",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('200 OK', () => pm.response.to.have.status(200));",
+							"const d = pm.response.json();",
+							"pm.test('ID coincide', () => pm.expect(d.id).to.eql(pm.collectionVariables.get('order_id')));",
+							"pm.test('Campos minimos', () => ['client_name','items','total','status'].forEach(k=>pm.expect(d).to.have.property(k)));"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/api/orders/{{order_id}}",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"orders",
+						"{{order_id}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Listar Pedidos",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('200 OK', () => pm.response.to.have.status(200));",
+							"const arr = pm.response.json();",
+							"pm.test('Es array', () => pm.expect(arr).to.be.an('array'));",
+							"pm.test('Incluye order_id', () => { const id = pm.collectionVariables.get('order_id'); pm.expect(arr.some(o => o.id === id)).to.be.true; });"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/api/orders",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"orders"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Avanzar Pedido (1)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('200 OK', () => pm.response.to.have.status(200));",
+							"const d = pm.response.json();",
+							"pm.test('status = sent', () => pm.expect(d.status).to.eql('sent'));"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/api/orders/{{order_id}}/advance",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"orders",
+						"{{order_id}}",
+						"advance"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Avanzar Pedido (2) a delivered (se elimina)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('200 OK', () => pm.response.to.have.status(200));",
+							"/* Tras delivered el repo borra la orden y puede devolver null; validamos con una llamada posterior */",
+							"pm.sendRequest({",
+							"  url: pm.collectionVariables.get('base_url') + '/api/orders/' + pm.collectionVariables.get('order_id'),",
+							"  method: 'GET',",
+							"  header: [{key:'Accept', value:'application/json'}]",
+							"}, (err, res) => {",
+							"  if (!err) {",
+							"    pm.test('GET por ID tras delivered devuelve 404', () => pm.expect(res.code).to.eql(404));",
+							"  }",
+							"});"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/api/orders/{{order_id}}/advance",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"orders",
+						"{{order_id}}",
+						"advance"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8000"
+		},
+		{
+			"key": "order_id",
+			"value": ""
+		}
+	]
+}

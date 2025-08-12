@@ -1,83 +1,84 @@
-# 🧪 OlaClick Backend Challenge - Laravel Edition
+# OlaClick Challenge Laravel 2025
 
-## 🎯 Objetivo
+Este repositorio contiene la implementación del reto técnico **OlaClick Challenge Laravel 2025**, desarrollado en **Laravel 11** y ejecutado en contenedores **Docker**.  
+La solución incluye:
 
-Construir una API RESTful para la gestión de órdenes de un restaurante, implementada en **Laravel**, siguiendo principios **SOLID**, usando **Eloquent ORM**, **PostgreSQL** como base de datos y **Redis** para caché. La solución debe estar **contenedorizada con Docker**.
+- Endpoints solicitados para gestión de pedidos.
+- Caché de listado con TTL de **30 segundos**.
+- Migraciones y seeders para datos iniciales.
+- Pruebas automáticas (PHPUnit/Pest).
+- Pruebas manuales realizadas en **Postman**.
 
 ---
 
-## 📌 Requerimientos Funcionales
+## 🚀 Instalación y Puesta en Marcha
 
-### 1. Listar órdenes
-- Endpoint: `GET /api/orders`
-- Retorna todas las órdenes activas (`status != 'delivered'`).
-- Debe usar Redis para cachear el resultado (TTL: 30s).
+Sigue estos pasos para levantar el proyecto en tu entorno local usando **Docker**:
 
-### 2. Crear una nueva orden
-- Endpoint: `POST /api/orders`
-- Crea una nueva orden con estado inicial `initiated`.
-- Estructura esperada:
-  ```json
-  {
-    "client_name": "Carlos Gómez",
-    "items": [
-      { "description": "Lomo saltado", "quantity": 1, "unit_price": 60 },
-      { "description": "Inka Kola", "quantity": 2, "unit_price": 10 }
-    ]
-  }
+```bash
+# 1) Clonar este repositorio
+git clone https://github.com/erikstiven/challenge-laravel-2025.git
+cd challenge-laravel-2025
 
-### 3. Avanzar estado de una orden
-Endpoint: `POST /api/orders/{id}/advance`
+# 2) Preparar el archivo de entorno
+cp .env.example .env
 
-Transición:
+# 3) Construir y levantar contenedores
+docker compose up -d --build
 
-initiated → sent → delivered
+# 4) Instalar dependencias dentro del contenedor
+docker exec -it olaclick-api composer install
 
-Si llega a delivered, la orden debe ser eliminada de la base de datos y del caché.
+# 5) Generar key de Laravel y ejecutar migraciones + seeders
+docker exec -it olaclick-api php artisan key:generate
+docker exec -it olaclick-api php artisan migrate --force
+docker exec -it olaclick-api php artisan db:seed --force
 
-### 4. Ver detalle de una orden
-Endpoint: `GET /api/orders/{id}`
 
-Muestra datos completos incluyendo items, totales y estado actual.
 
-## 🧱 Consideraciones Técnicas
-- Usar Laravel 10+
-- Base de datos: PostgreSQL
-- Cache: Redis
-- Arquitectura REST
-- Principios SOLID aplicados (ej. inyección de dependencias, separación de responsabilidades)
-- Modelado con Eloquent ORM
-- Validaciones robustas con Form Requests
-- Tests unitarios o de feature (al menos 1 funcionalidad)
-- Contenerización con Docker + Docker Compose
+🧪 Ejecución de pruebas automáticas
+Este proyecto incluye pruebas automáticas con Pest/PHPUnit.
+Para ejecutarlas dentro del contenedor:
+    docker exec -it olaclick-api php artisan test
 
-## 📦 Estructura sugerida
-```
-app/
-├── Http/
-│   ├── Controllers/
-│   ├── Requests/
-├── Models/
-├── Services/
-├── Repositories/
-routes/
-├── api.php
-```
 
-## 🧪 Extra Points
-- Documentación en Swagger o Postman
-- Seeders y factories para testeo rápido
-- Logs de cambios de estado con timestamps
 
-## 🚀 Cómo entregar
-- Haz un fork de este repositorio o clónalo como plantilla.
-- Implementa la solución.
-- Incluye instrucciones claras en un README.md para levantar el proyecto con Docker.
-- Comparte el repositorio (público o privado) con el equipo de OlaClick enviando un push.
+📌 Pruebas manuales con Postman
+En la carpeta postman/ se incluye la colección:
 
-## ❓ Preguntas opcionales para explicar
-- ¿Cómo asegurarías que esta API escale ante alta concurrencia?
-- ¿Qué estrategia seguirías para desacoplar la lógica del dominio de Laravel/Eloquent?
-- ¿Cómo manejarías versiones de la API en producción?
+    postman/OlaClickChallenge.postman_collection.json
 
-**¡Mucho éxito!** 💡
+Pasos para usarla:
+
+Abrir Postman.
+
+Importar la colección (Import → seleccionar el archivo).
+
+Configurar la variable de entorno {{base_url}} como:
+
+    http://localhost:8000
+
+Ejecución sugerida de endpoints:
+
+POST /api/orders → Crear pedido.
+
+GET /api/orders/{order_id} → Consultar pedido.
+
+GET /api/orders → Listar pedidos.
+
+POST /api/orders/{order_id}/advance → Avanzar estado del pedido.
+
+Probar la cache y la eliminación tras el estado delivered.
+
+
+
+❓ Preguntas opcionales (razonamiento)
+1. ¿Cómo asegurarías que esta API escale ante alta concurrencia?
+Implementaría caché distribuido (por ejemplo Redis en clúster), colas para operaciones pesadas, y balanceadores de carga horizontales para repartir peticiones.
+
+2. ¿Qué estrategia seguirías para desacoplar la lógica del dominio de Laravel/Eloquent?
+Usar patrones como Repository o Service Layer, de modo que el dominio no dependa directamente de Eloquent. Esto facilita cambios de ORM o incluso migrar a otra arquitectura.
+
+3. ¿Cómo manejarías versiones de la API en producción?
+Versionar en las rutas (/api/v1/...), mantener soporte a versiones anteriores por un tiempo definido y documentar claramente los cambios para clientes.
+
